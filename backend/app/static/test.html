@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>PitWall test</title>
+<body style="font-family: monospace; background:#111; color:#eee; padding:1rem">
+<h3>PitWall WebSocket test</h3>
+<div>
+  <button onclick="send({action:'play'})">Play</button>
+  <button onclick="send({action:'pause'})">Pause</button>
+  <button onclick="send({action:'speed', value:1})">1x</button>
+  <button onclick="send({action:'speed', value:4})">4x</button>
+  <button onclick="send({action:'speed', value:10})">10x</button>
+  <button onclick="send({action:'seek', value:0})">Restart</button>
+  <button onclick="send({action:'seek', value:40})">Jump to 40s</button>
+</div>
+<div id="status" style="margin:.5rem 0">connecting...</div>
+<pre id="out" style="height:70vh; overflow:auto"></pre>
+
+<script>
+  const ws = new WebSocket(`ws://${location.host}/ws/replay?session=9693&driver=1&speed=4`);
+  const out = document.getElementById("out");
+  const status = document.getElementById("status");
+
+  function send(cmd) { ws.send(JSON.stringify(cmd)); }
+
+  ws.onopen = () => status.textContent = "connected";
+  ws.onclose = () => status.textContent = "closed";
+  ws.onmessage = (e) => {
+    const m = JSON.parse(e.data);
+    if (m.type === "samples") {
+      const s = m.data[m.data.length - 1];
+      const bar = "█".repeat(Math.floor((s.speed || 0) / 8));
+      out.textContent += `${s.t.toFixed(2).padStart(6)}s ${String(s.speed).padStart(3)} km/h  g${s.gear}  ${bar}\n`;
+      out.scrollTop = out.scrollHeight;
+    } else {
+      status.textContent = JSON.stringify(m);
+    }
+  };
+</script>
