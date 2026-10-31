@@ -13,7 +13,14 @@ class Cache:
     def __init__(self, path=DEFAULT_PATH):
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        self.conn = sqlite3.connect(path)
+        self.conn = sqlite3.connect(path, check_same_thread=False)
+        self.conn.execute(
+            """CREATE TABLE IF NOT EXISTS responses (
+                key TEXT PRIMARY KEY,
+                body TEXT NOT NULL,
+                fetched_at REAL NOT NULL
+            )"""
+        )
         self.conn.execute(
             """CREATE TABLE IF NOT EXISTS responses (
                 key TEXT PRIMARY KEY,
